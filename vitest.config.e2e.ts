@@ -7,5 +7,10 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.e2e-spec.ts'],
+    globalSetup: ['./test/setup-e2e.ts'],
+    fileParallelism: false,
+    env: {
+      DATABASE_URL: 'file:./test.db',
+    },
   },
 });
