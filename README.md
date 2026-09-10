@@ -166,6 +166,11 @@ curl http://localhost:3000/posts
 |---|---|
 | 400 | Invalid body (e.g. malformed email, missing required field) |
 | 404 | Resource not found (e.g. `User 999 not found`) |
+| 409 | Unique constraint violation (e.g. duplicate `email`) |
+
+Prisma errors are mapped to HTTP statuses by a global filter
+(`src/common/filters/prisma-exception.filter.ts`): `P2002 → 409`, `P2025 → 404`,
+`P2003 → 400`.
 
 ## Validation
 
@@ -184,14 +189,34 @@ export class CreateUserDto {
 }
 ```
 
-The global `ValidationPipe` (`src/main.ts`) applies the rules before the controller:
+The global `ValidationPipe` is registered in `src/app.module.ts` via `APP_PIPE`, so
+it also applies in tests:
 
 ```ts
-app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+{
+  provide: APP_PIPE,
+  useValue: new ValidationPipe({ whitelist: true, transform: true }),
+}
 ```
 
 - `whitelist: true` → strips properties not declared on the DTO.
 - `transform: true` → converts the JSON payload into a class instance.
+
+## Testing
+
+The project ships with **unit** and **end-to-end (e2e)** tests using `vitest`.
+
+```bash
+npm test          # unit tests
+npm run test:e2e  # e2e tests (spin up the Nest app + supertest)
+```
+
+- E2E specs live in `test/` (`users.e2e-spec.ts`, `posts.e2e-spec.ts`).
+- They run against an **isolated `test.db`**: a `globalSetup` (`test/setup-e2e.ts`)
+  regenerates the Prisma Client, applies migrations and deletes the file afterwards,
+  so the development `dev.db` is never touched.
+- Coverage includes happy paths, `400` validation, `404`, `409` duplicate email and
+  the `onDelete: Cascade` behavior.
 
 ## Project structure
 
@@ -201,8 +226,11 @@ prisma/
   migrations/              # migration history
 prisma7.config.ts          # Prisma CLI configuration (v7)
 src/
-  main.ts                  # bootstrap + ValidationPipe + CORS
-  app.module.ts            # root module
+  main.ts                  # bootstrap + CORS
+  app.module.ts            # root module (registers ValidationPipe + filter)
+  common/
+    filters/
+      prisma-exception.filter.ts   # maps Prisma errors to HTTP statuses
   prisma/
     prisma.module.ts       # global module exposing PrismaService
     prisma.service.ts      # PrismaClient + better-sqlite3 driver adapter
@@ -217,6 +245,12 @@ src/
     posts.service.ts
     dto/{create,update}-post.dto.ts
   generated/prisma/        # generated Prisma Client (git-ignored)
+test/
+  app.e2e-spec.ts
+  users.e2e-spec.ts
+  posts.e2e-spec.ts
+  setup-e2e.ts             # globalSetup: isolated test.db
+  utils/test-app.ts        # app bootstrap + database reset helpers
 ```
 
 ## Technical notes
@@ -229,11 +263,14 @@ src/
   In this setup `migrate dev` did not regenerate the Client automatically.
 - **CORS**: enabled permissively (`app.enableCors()`), fine for development.
   In production, restrict the allowed origins.
+- **Global providers**: the `ValidationPipe` and the `PrismaExceptionFilter` are
+  registered with `APP_PIPE`/`APP_FILTER` in `AppModule` (not `useGlobalPipes` in
+  `main.ts`), so they are active both in the running app and in e2e tests.
 
 ## Next steps
 
-- [ ] E2E tests (Users + Posts) with `vitest` + `supertest`.
+- [x] E2E tests (Users + Posts) with `vitest` + `supertest`.
+- [x] Global error handling (Prisma errors mapped to HTTP statuses).
 - [ ] Authentication/authorization.
 - [ ] Pagination and filters on listings.
-- [ ] Global error handling.
 - [ ] Move to PostgreSQL in production (provider + adapter + URL).
