@@ -1,11 +1,10 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { App } from 'supertest/types';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { createTestApp, resetDatabase } from './utils/test-app.js';
 
 describe('Posts (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: INestApplication;
   let prisma: PrismaService;
   let authorId: number;
 

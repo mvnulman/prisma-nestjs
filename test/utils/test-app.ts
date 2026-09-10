@@ -1,11 +1,10 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { App } from 'supertest/types';
 import { AppModule } from '../../src/app.module.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 
 export interface TestContext {
-  app: INestApplication<App>;
+  app: INestApplication;
   prisma: PrismaService;
 }
 
@@ -14,7 +13,7 @@ export async function createTestApp(): Promise<TestContext> {
     imports: [AppModule],
   }).compile();
 
-  const app = moduleRef.createNestApplication<INestApplication<App>>();
+  const app = moduleRef.createNestApplication();
   await app.init();
 
   const prisma = app.get(PrismaService);
