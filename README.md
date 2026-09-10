@@ -1,87 +1,87 @@
 # prisma-nestjs
 
-API REST de exemplo construída passo a passo com **NestJS + Prisma ORM + SQLite**.
-Modela um domínio simples de blog: **`User` 1—N `Post`**, com CRUD completo, relações,
-validação de entrada e exclusão em cascata.
+A sample REST API built step by step with **NestJS + Prisma ORM + SQLite**.
+It models a simple blog domain: **`User` 1—N `Post`**, with full CRUD, relations,
+input validation and cascading deletes.
 
 ## Stack
 
-| Camada | Tecnologia |
+| Layer | Technology |
 |---|---|
 | Framework | [NestJS 12](https://nestjs.com) |
-| ORM | [Prisma ORM 7.10](https://www.prisma.io) (generator `prisma-client`) |
-| Banco | SQLite via driver adapter `@prisma/adapter-better-sqlite3` |
-| Validação | `class-validator` + `class-transformer` |
-| Módulos | ESM (`"type": "module"`), TypeScript 6, `module: nodenext` |
-| Testes/Lint | `vitest` e `oxlint` (do scaffold do Nest 12) |
+| ORM | [Prisma ORM 7.10](https://www.prisma.io) (`prisma-client` generator) |
+| Database | SQLite via the `@prisma/adapter-better-sqlite3` driver adapter |
+| Validation | `class-validator` + `class-transformer` |
+| Modules | ESM (`"type": "module"`), TypeScript 6, `module: nodenext` |
+| Tests/Lint | `vitest` and `oxlint` (from the Nest 12 scaffold) |
 
-## Requisitos
+## Requirements
 
-- **Node.js >= 22** (testado no Node 24) — o `better-sqlite3` exige `>=22`.
+- **Node.js >= 22** (tested on Node 24) — `better-sqlite3` requires `>=22`.
 - npm.
 
-## Como rodar
+## Getting started
 
 ```bash
-# 1. instala as dependências
+# 1. install dependencies
 npm install
 
-# 2. cria o arquivo de variáveis de ambiente
+# 2. create the environment file
 cp .env.example .env
 
-# 3. aplica as migrations e cria o arquivo dev.db
+# 3. apply migrations and create the dev.db file
 npm run prisma:migrate
 
-# 4. gera o Prisma Client em src/generated/prisma
+# 4. generate the Prisma Client into src/generated/prisma
 npm run prisma:generate
 
-# 5. sobe a API em modo watch
+# 5. start the API in watch mode
 npm run start:dev
 ```
 
-A API fica disponível em **http://localhost:3000** (configurável via `PORT`).
+The API is available at **http://localhost:3000** (configurable via `PORT`).
 
-### Variáveis de ambiente
+### Environment variables
 
-`.env` (não versionado — veja `.env.example`):
+`.env` (not versioned — see `.env.example`):
 
 ```dotenv
 DATABASE_URL="file:./dev.db"
 ```
 
-> O arquivo SQLite é criado na **raiz do projeto** (`./dev.db`).
+> The SQLite file is created at the **project root** (`./dev.db`).
 
-## Banco de dados
+## Database
 
-- SQLite (arquivo único) — ideal para desenvolvimento e aprendizado.
-- As migrations ficam versionadas em `prisma/migrations/`.
-- O `PrismaClient` é gerado em `src/generated/prisma/` (ignorado no git).
+- SQLite (single file) — great for development and learning.
+- Migrations are versioned under `prisma/migrations/`.
+- The `PrismaClient` is generated into `src/generated/prisma/` (git-ignored).
 
-### Scripts de banco
+### Database scripts
 
-| Script | O que faz |
+| Script | What it does |
 |---|---|
-| `npm run prisma:migrate` | Cria e aplica uma migration a partir do schema |
-| `npm run prisma:generate` | Regenera o Prisma Client |
-| `npm run prisma:studio` | Abre o Prisma Studio (GUI) |
-| `npm run prisma:reset` | Apaga o banco e reaplica todas as migrations |
+| `npm run prisma:migrate` | Create and apply a migration from the schema |
+| `npm run prisma:generate` | Regenerate the Prisma Client |
+| `npm run prisma:studio` | Open Prisma Studio (GUI) |
+| `npm run prisma:reset` | Drop the database and reapply all migrations |
 
-### Inspecionar os dados
+### Inspecting the data
 
 ```bash
 # Prisma Studio
 npm run prisma:studio          # http://localhost:5555
 
-# CLI do SQLite
+# SQLite CLI
 sqlite3 -header -column dev.db "SELECT * FROM User;"
 sqlite3 -header -column dev.db "SELECT * FROM Post;"
 ```
 
-> **Nota:** o Prisma Studio 7.10 exige a URL no formato `file://`. Por isso o script
-> `prisma:studio` passa `--url "file://$PWD/dev.db"` explicitamente. Rodar apenas
-> `npx prisma studio` falha com `"file:./dev.db" protocol`.
+> **Note:** Prisma Studio 7.10 requires the URL in the `file://` format. That is why the
+> `prisma:studio` script passes `--url "file://$PWD/dev.db"` explicitly. Running plain
+> `npx prisma studio` fails with `"file:./dev.db" protocol`.
 
-## Modelo de dados
+## Data model
 
 ```prisma
 model User {
@@ -101,9 +101,9 @@ model Post {
 }
 ```
 
-- `User.email` é único.
-- Um `Post` sempre pertence a um `User` (`authorId` obrigatório).
-- Ao deletar um `User`, seus `Post`s são removidos automaticamente (`onDelete: Cascade`).
+- `User.email` is unique.
+- A `Post` always belongs to a `User` (`authorId` is required).
+- Deleting a `User` automatically removes its `Post`s (`onDelete: Cascade`).
 
 ## Endpoints
 
@@ -111,7 +111,7 @@ Base: `http://localhost:3000`
 
 ### Users
 
-| Método | Rota | Body | Sucesso |
+| Method | Route | Body | Success |
 |---|---|---|---|
 | POST | `/users` | `{ "email", "name"? }` | 201 |
 | GET | `/users` | — | 200 |
@@ -120,29 +120,29 @@ Base: `http://localhost:3000`
 | DELETE | `/users/:id` | — | 200 |
 
 ```bash
-# criar
+# create
 curl -X POST http://localhost:3000/users \
   -H 'Content-Type: application/json' \
   -d '{"email":"alice@prisma.io","name":"Alice"}'
 
-# listar (inclui os posts de cada usuário)
+# list (includes each user's posts)
 curl http://localhost:3000/users
 
-# buscar um
+# get one
 curl http://localhost:3000/users/1
 
-# atualizar
+# update
 curl -X PATCH http://localhost:3000/users/1 \
   -H 'Content-Type: application/json' \
   -d '{"name":"Alice Souza"}'
 
-# remover
+# delete
 curl -X DELETE http://localhost:3000/users/1
 ```
 
 ### Posts
 
-| Método | Rota | Body | Sucesso |
+| Method | Route | Body | Success |
 |---|---|---|---|
 | POST | `/posts` | `{ "title", "content"?, "published"?, "authorId" }` | 201 |
 | GET | `/posts` | — | 200 |
@@ -151,25 +151,25 @@ curl -X DELETE http://localhost:3000/users/1
 | DELETE | `/posts/:id` | — | 200 |
 
 ```bash
-# criar (authorId deve existir)
+# create (authorId must exist)
 curl -X POST http://localhost:3000/posts \
   -H 'Content-Type: application/json' \
-  -d '{"title":"Hello World","content":"primeiro post","authorId":1}'
+  -d '{"title":"Hello World","content":"first post","authorId":1}'
 
-# listar (inclui o autor de cada post)
+# list (includes each post's author)
 curl http://localhost:3000/posts
 ```
 
-### Códigos de erro
+### Error codes
 
-| Código | Quando |
+| Code | When |
 |---|---|
-| 400 | Corpo inválido (ex.: e-mail malformado, campo obrigatório ausente) |
-| 404 | Recurso não encontrado (ex.: `User 999 not found`) |
+| 400 | Invalid body (e.g. malformed email, missing required field) |
+| 404 | Resource not found (e.g. `User 999 not found`) |
 
-## Validação
+## Validation
 
-Os DTOs usam decorators do `class-validator`:
+The DTOs use `class-validator` decorators:
 
 ```ts
 export class CreateUserDto {
@@ -184,28 +184,28 @@ export class CreateUserDto {
 }
 ```
 
-O `ValidationPipe` global (`src/main.ts`) aplica as regras antes do controller:
+The global `ValidationPipe` (`src/main.ts`) applies the rules before the controller:
 
 ```ts
 app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 ```
 
-- `whitelist: true` → remove propriedades não declaradas no DTO.
-- `transform: true` → converte o JSON em instância da classe.
+- `whitelist: true` → strips properties not declared on the DTO.
+- `transform: true` → converts the JSON payload into a class instance.
 
-## Estrutura do projeto
+## Project structure
 
 ```
 prisma/
-  schema.prisma            # models User e Post
-  migrations/              # histórico de migrations
-prisma7.config.ts          # configuração do CLI do Prisma (v7)
+  schema.prisma            # User and Post models
+  migrations/              # migration history
+prisma7.config.ts          # Prisma CLI configuration (v7)
 src/
   main.ts                  # bootstrap + ValidationPipe + CORS
-  app.module.ts            # módulo raiz
+  app.module.ts            # root module
   prisma/
-    prisma.module.ts       # módulo global que expõe o PrismaService
-    prisma.service.ts      # PrismaClient + driver adapter better-sqlite3
+    prisma.module.ts       # global module exposing PrismaService
+    prisma.service.ts      # PrismaClient + better-sqlite3 driver adapter
   users/
     users.module.ts
     users.controller.ts
@@ -216,24 +216,24 @@ src/
     posts.controller.ts
     posts.service.ts
     dto/{create,update}-post.dto.ts
-  generated/prisma/        # Prisma Client gerado (ignorado no git)
+  generated/prisma/        # generated Prisma Client (git-ignored)
 ```
 
-## Notas técnicas
+## Technical notes
 
-- **ESM**: o projeto é `"type": "module"`. Imports internos usam extensão `.js`
-  (ex.: `import { UsersService } from './users.service.js'`), exigência do `nodenext`.
-- **Prisma 7**: usa *driver adapter* (`better-sqlite3`) e configuração em
-  `prisma7.config.ts` (a URL do banco não fica mais no `schema.prisma`).
-- **`prisma generate`**: após alterar o schema, rode `npm run prisma:generate`.
-  Neste setup o `migrate dev` não regenerou o Client automaticamente.
-- **CORS**: habilitado de forma permissiva (`app.enableCors()`), adequado para
-  desenvolvimento. Em produção, restrinja as origens permitidas.
+- **ESM**: the project is `"type": "module"`. Internal imports use the `.js`
+  extension (e.g. `import { UsersService } from './users.service.js'`), required by `nodenext`.
+- **Prisma 7**: uses a *driver adapter* (`better-sqlite3`) and configuration in
+  `prisma7.config.ts` (the database URL no longer lives in `schema.prisma`).
+- **`prisma generate`**: after changing the schema, run `npm run prisma:generate`.
+  In this setup `migrate dev` did not regenerate the Client automatically.
+- **CORS**: enabled permissively (`app.enableCors()`), fine for development.
+  In production, restrict the allowed origins.
 
-## Próximos passos
+## Next steps
 
-- [ ] Testes e2e (Users + Posts) com `vitest` + `supertest`.
-- [ ] Autenticação/autorização.
-- [ ] Paginação e filtros nas listagens.
-- [ ] Tratamento global de erros.
-- [ ] Migrar para PostgreSQL em produção (provider + adapter + URL).
+- [ ] E2E tests (Users + Posts) with `vitest` + `supertest`.
+- [ ] Authentication/authorization.
+- [ ] Pagination and filters on listings.
+- [ ] Global error handling.
+- [ ] Move to PostgreSQL in production (provider + adapter + URL).
